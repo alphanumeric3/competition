@@ -12,6 +12,9 @@ source venv/bin/activate
 cp config.example.py instance/config.py
 sed -i s/verysecretkey/`openssl rand -hex 30`/ instance/config.py
 
+# create the DB (in instance/database.db)
+flask --app competition init-db
+
 # start the app (no production yet)
 flask --debug --app competition run
 ```
