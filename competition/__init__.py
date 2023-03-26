@@ -1,57 +1,72 @@
 import os
 from random import randint
 from flask import Flask, jsonify, request, flash, redirect, url_for, render_template
+from . import database as db
 
 def create_app():
     app = Flask(__name__, instance_relative_config=True)
+    # get the config, if it doesn't exist exit
     try:
         app.config.from_pyfile("config.py")
         app.config.update(
             DATABASE=os.path.join(app.instance_path, 'database.db')
         )
-    except Exception as e:
-        print("where is the config?", e)
+    except FileNotFoundError:
+        print(f"config.py not found. create it in {app.instance_path}")
         exit(1)
+    except Exception as e:
+        print("an error occurred:", e)
 
-    # app.secret_key = app.config['SECRET_KEY']
+    db.init_app(app)
+
+    def valid_name(name):
+        return len(name) <= app.config['NAME_LIMIT'] and name.isalpha()
+
+    def valid_team_name(name):
+        return len(name) <= app.config['NAME_LIMIT'] and name.isalphanum()
 
     @app.route("/")
     def homepage():
-        return app.send_static_file("index.html")
-    
+        return render_template("home.html")
+
     @app.post("/form/person")
     def form_person():
-        firstname = request.form['firstname']
-        lastname = request.form['lastname']
-        teamcode = request.form.get('teamcode')
+        first_name = request.form['first_name'].capitalize()
+        last_name = request.form['last_name'].capitalize()
+        team_code = request.form.get('team_code')
+        team_id = None # used later in the query, stays None if no code given
+        team_name = None # used in the person_success template if a team is joined
+        con = db.get_db()
 
-        print(firstname, lastname, type(teamcode))
+        print(first_name, last_name, type(team_code))
 
         # check name length
-        if len(firstname) <= app.config['NAME_LIMIT'] and len(lastname) <= app.config['NAME_LIMIT']:
-            pass
-        else: # if any name is too long, show an error
-            flash(f"The limit for names is {app.config['NAME_LIMIT']} characters.")
+        if not valid_name(first_name) and not valid_name(last_name):
+            flash(f"Names can't be longer than {app.config['NAME_LIMIT']} characters.")
             return redirect(url_for("form_person"))
 
-        # check if there is a team involved
-        # for future reference: this conditional block shouldn't end the
-        # request in the final version UNLESS the code is invalid or nonexistent.
-        # if we look up the team and it exists, we add it to the sqlite tuple
-        # thing and let the rest of the function execute
-        if teamcode == "": # there is no team code
-            print("no team code, not checking")
-        # TODO: is this foolproof?
-        elif teamcode.isnumeric() and len(teamcode) == 6:
-            print("checking team code")
-            teamcode = int(teamcode)
+        # if team code given, validate it
+        if team_code == "":
+            pass
+        elif team_code.isnumeric() and len(team_code) == 6:
+            team_code = int(team_code)
+            query = con.execute("SELECT name, id FROM teams WHERE code = ?", (team_code,))
+            result = query.fetchone()
+            if result is None: # if nonexistent team given, show an error
+                flash("Team does not exist.")
+                return redirect(url_for("form_person"))
+            else:
+                team_id = result['id']
+                team_name = result['name']
+                print(team_id, team_name)
         else: # if it's not a 6 digit code, show an error
             flash("Invalid team code. It should be 6 digits.")
             return redirect(url_for("form_person"))
             
-        # continue processing
-        print("user is joining a team")
-        return f"welcome. are you in a team?: ({teamcode != ''})\n"
+        # add the competitor
+        query = con.execute("INSERT INTO individuals (first_name, last_name, team_id) VALUES(?,?,?)", (first_name,last_name,team_id))
+        con.commit()
+        return render_template("form/person_success.html", team_name=team_name, team_code=team_code, first_name=first_name)
 
     @app.get("/form/person")
     def render_form_person():
@@ -59,31 +74,40 @@ def create_app():
 
     @app.post("/form/team")
     def form_team():
-        firstname = request.form['firstname']
-        lastname = request.form['lastname']
-        teamname = request.form['teamname']
+        first_name = request.form['first_name'].capitalize()
+        last_name = request.form['last_name'].capitalize()
+        team_name = request.form['team_name']
+        con = db.get_db()
 
-        print(firstname, lastname, teamname)
+        print(first_name, last_name, team_name)
 
         # validate the names
-        # this conditional looks unwieldy to me, can i make it more concise?
-        if len(firstname) <= app.config['NAME_LIMIT'] and len(lastname) <= app.config['NAME_LIMIT'] and len(teamname) <= app.config['NAME_LIMIT']:
-            pass
-        else: # if any name is too long, show an error
-            flash(f"The limit for names is {app.config['NAME_LIMIT']} characters.")
+        name_limit = app.config['NAME_LIMIT']
+        if not valid_name(first_name) and not valid_name(last_name) and not valid_team_name(team_name):
+            flash(f"Names can't be longer than {app.config['NAME_LIMIT']} characters, and can only have letters. Team names can have numbers.")
             return redirect(url_for("form_team"))
 
         # query the DB to see if the name is taken
         # x = db.fetchone() or something
-        name_taken = ...
-        if name_taken:
-            flash("this team already exists")
+        query = con.execute("SELECT * FROM teams WHERE name = ?", (team_name,))
+        if query.fetchone() is not None:
+            flash("This team already exists.")
             return redirect(url_for("form_team"))
         else:
-            # insert the team into the db, including a 6 digit code
-            # add_competitor_stuff()
-            # add_team_stuff(reference the competitor in the query)
-            return "hooray you are now a team leader. code 123456"
+            # genearate a 6 digit code for others to join
+            team_code = randint(100000, 999999)
+            # add the competitor first
+            query = con.execute("INSERT INTO individuals (first_name, last_name) VALUES(?,?)", (first_name,last_name))
+            teamcreator = query.lastrowid # this is the competitor's id
+            print("team creator id", teamcreator)
+            # add the team next
+            query = con.execute("INSERT INTO teams (name, creator, code) VALUES(?,?,?)", (team_name, teamcreator, team_code))
+            team_id = query.lastrowid # team's id
+            print("team id", team_id)
+            # add the competitor to the team
+            query = con.execute("UPDATE individuals SET team_id = ? WHERE id = ?", (team_id, teamcreator))
+            con.commit()
+            return render_template("form/team_success.html", team_name=team_name, team_code=team_code, first_name=first_name)
 
     @app.get("/form/team")
     def render_form_team():
@@ -93,5 +117,5 @@ def create_app():
     def flashtest():
         flash("this is a flashed message")
         return redirect(url_for("form_person"))
-        
+
     return app

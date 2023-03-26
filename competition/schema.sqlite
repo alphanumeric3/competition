@@ -1,0 +1,39 @@
+DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS individuals;
+DROP TABLE IF EXISTS teams;
+DROP TABLE IF EXISTS entries;
+
+CREATE TABLE events(
+    id INTEGER PRIMARY KEY ASC,
+    name TEXT NOT NULL,
+    type INTEGER NOT NULL
+);
+
+CREATE TABLE individuals(
+    id INTEGER PRIMARY KEY ASC,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    team_id INTEGER DEFAULT NULL,
+    FOREIGN KEY(team_id) REFERENCES teams(id)
+); 
+
+CREATE TABLE teams(
+    id INTEGER PRIMARY KEY ASC,
+    name TEXT NOT NULL,
+    creator INTEGER NOT NULL,
+    code INTEGER NOT NULL,
+    FOREIGN KEY(creator) REFERENCES individuals(id)
+);
+
+CREATE TABLE entries(
+    event_id INTEGER NOT NULL,
+    -- 0 for individual, 1 for team
+    entry_type INTEGER NOT NULL,
+    -- TODO: these fields need a table constraint
+    -- only one or the other can be set
+    team_id INTEGER,
+    individual_id INTEGER,
+    FOREIGN KEY(event_id) REFERENCES events(id),
+    FOREIGN KEY(team_id) REFERENCES teams(id),
+    FOREIGN KEY(individual_id) REFERENCES individuals(id)
+);
