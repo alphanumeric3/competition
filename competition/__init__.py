@@ -66,7 +66,7 @@ def create_app():
         # add the competitor
         query = con.execute("INSERT INTO individuals (first_name, last_name, team_id) VALUES(?,?,?)", (first_name,last_name,team_id))
         con.commit()
-        return render_template("form/person_success.html", team_name=team_name, team_code=team_code, first_name=first_name)
+        return render_template("form/success/person.html", team_name=team_name, team_code=team_code, first_name=first_name)
 
     @app.get("/form/person")
     def render_form_person():
@@ -107,7 +107,7 @@ def create_app():
             # add the competitor to the team
             query = con.execute("UPDATE individuals SET team_id = ? WHERE id = ?", (team_id, teamcreator))
             con.commit()
-            return render_template("form/team_success.html", team_name=team_name, team_code=team_code, first_name=first_name)
+            return render_template("form/success/team.html", team_name=team_name, team_code=team_code, first_name=first_name)
 
     @app.get("/form/team")
     def render_form_team():
