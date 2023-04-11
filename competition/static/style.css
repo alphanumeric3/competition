@@ -2,7 +2,7 @@ body {
 	font-family: sans-serif;
 }
 
-h1, p, .box, form {
+.box, form {
 	display: grid;
 	justify-self: center;
 }

@@ -17,13 +17,14 @@ def create_app():
     except Exception as e:
         print("an error occurred:", e)
 
+    # let database.py set up any hooks
     db.init_app(app)
 
     def valid_name(name):
         return len(name) <= app.config['NAME_LIMIT'] and name.isalpha()
 
     def valid_team_name(name):
-        return len(name) <= app.config['NAME_LIMIT'] and name.isalphanum()
+        return len(name) <= app.config['NAME_LIMIT'] and name.isalnum()
 
     @app.route("/")
     def homepage():
@@ -31,6 +32,7 @@ def create_app():
 
     @app.post("/form/person")
     def form_person():
+        """Handle the individual signup form and add people to the database."""
         first_name = request.form['first_name'].capitalize()
         last_name = request.form['last_name'].capitalize()
         team_code = request.form.get('team_code')
@@ -41,7 +43,7 @@ def create_app():
         print(first_name, last_name, type(team_code))
 
         # check name length
-        if not valid_name(first_name) and not valid_name(last_name):
+        if not valid_name(first_name) or not valid_name(last_name):
             flash(f"Names can't be longer than {app.config['NAME_LIMIT']} characters.")
             return redirect(url_for("form_person"))
 
@@ -50,12 +52,13 @@ def create_app():
             pass
         elif team_code.isnumeric() and len(team_code) == 6:
             team_code = int(team_code)
+            # lookup team by the code given
             query = con.execute("SELECT name, id FROM teams WHERE code = ?", (team_code,))
             result = query.fetchone()
             if result is None: # if nonexistent team given, show an error
                 flash("Team does not exist.")
                 return redirect(url_for("form_person"))
-            else:
+            else: # if team exists, take id and name
                 team_id = result['id']
                 team_name = result['name']
                 print(team_id, team_name)
@@ -63,7 +66,7 @@ def create_app():
             flash("Invalid team code. It should be 6 digits.")
             return redirect(url_for("form_person"))
             
-        # add the competitor
+        # add the competitor to the database
         query = con.execute("INSERT INTO individuals (first_name, last_name, team_id) VALUES(?,?,?)", (first_name,last_name,team_id))
         con.commit()
         return render_template("form/success/person.html", team_name=team_name, team_code=team_code, first_name=first_name)
@@ -74,6 +77,8 @@ def create_app():
 
     @app.post("/form/team")
     def form_team():
+        """Handle the team signup form and add the team and its owner to the database."""
+        # names should be capitalised
         first_name = request.form['first_name'].capitalize()
         last_name = request.form['last_name'].capitalize()
         team_name = request.form['team_name']
@@ -83,21 +88,20 @@ def create_app():
 
         # validate the names
         name_limit = app.config['NAME_LIMIT']
-        if not valid_name(first_name) and not valid_name(last_name) and not valid_team_name(team_name):
+        if not valid_name(first_name) or not valid_name(last_name) or not valid_team_name(team_name):
             flash(f"Names can't be longer than {app.config['NAME_LIMIT']} characters, and can only have letters. Team names can have numbers.")
             return redirect(url_for("form_team"))
 
         # query the DB to see if the name is taken
-        # x = db.fetchone() or something
         query = con.execute("SELECT * FROM teams WHERE name = ?", (team_name,))
         if query.fetchone() is not None:
             flash("This team already exists.")
             return redirect(url_for("form_team"))
         else:
-            # genearate a 6 digit code for others to join
+            # generate a 6 digit code for others to join
             team_code = randint(100000, 999999)
             # add the competitor first
-            query = con.execute("INSERT INTO individuals (first_name, last_name) VALUES(?,?)", (first_name,last_name))
+            query = con.execute("INSERT INTO individuals (first_name, last_name) VALUES(?,?)", (first_name, last_name))
             teamcreator = query.lastrowid # this is the competitor's id
             print("team creator id", teamcreator)
             # add the team next
@@ -112,6 +116,22 @@ def create_app():
     @app.get("/form/team")
     def render_form_team():
         return render_template("form/team.html")
+
+    @app.get("/events")
+    def list_events():
+        """TODO: make this a form lol"""
+        con = db.get_db()
+        # select the event id & event name from events and look up the event type name too (it will be the field `type`)
+        query = con.execute("""
+            SELECT events.id, events.name, events.team_event, event_type.name AS type
+            FROM events INNER JOIN event_type
+            GROUP BY events.id;
+        """)
+        events = query.fetchall()
+        print([event['team_event'] == True for event in events])
+        print(events)
+        return render_template("form/event/list.html", events=events)
+
 
     @app.get("/flashtest")
     def flashtest():
