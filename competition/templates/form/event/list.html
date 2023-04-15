@@ -15,10 +15,17 @@ Sign Up (i)
 			</ul>
 		{% endif %}
 	{% endwith %}
-	{% for event in events %}
-	<div class="box">
-		<h2>{{ event['name'] }} ({{ event['id'] }})</h2>
-		<p>{{ "Team" if event['team_event'] else "Individual" }} {{ event['type'] }}</p>
-	</div>
-	{% endfor %}
+	<form action="/events" method="post">
+		<ul>
+		{% for event in events %}
+			<li>
+				<label for="{{ event['id'] }}">
+					{{ event['name'] }} ({{ "Team" if event['team_event'] else "Individual" }}, {{ event['type'] }})
+				</label>
+				<input type="checkbox" id="{{ event['id'] }}" name="{{ event['id'] }}" />
+			</li>
+		{% endfor %}
+		</ul>
+	<button>Done</button>
+	</form>
 {% endblock %}

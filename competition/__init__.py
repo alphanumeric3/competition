@@ -1,6 +1,6 @@
 import os
 from random import randint
-from flask import Flask, jsonify, request, flash, redirect, url_for, render_template
+from flask import Flask, jsonify, request, flash, redirect, url_for, render_template, session
 from . import database as db
 
 def create_app():
@@ -32,7 +32,7 @@ def create_app():
 
     @app.post("/form/person")
     def form_person():
-        """Handle the individual signup form and add people to the database."""
+        """Handle the individual signup form and add person to the database."""
         first_name = request.form['first_name'].capitalize()
         last_name = request.form['last_name'].capitalize()
         team_code = request.form.get('team_code')
@@ -69,6 +69,7 @@ def create_app():
         # add the competitor to the database
         query = con.execute("INSERT INTO individuals (first_name, last_name, team_id) VALUES(?,?,?)", (first_name,last_name,team_id))
         con.commit()
+        session["individual_id"] = query.lastrowid
         return render_template("form/success/person.html", team_name=team_name, team_code=team_code, first_name=first_name)
 
     @app.get("/form/person")
@@ -77,7 +78,11 @@ def create_app():
 
     @app.post("/form/team")
     def form_team():
-        """Handle the team signup form and add the team and its owner to the database."""
+        """
+        Handle the team signup form and add the team and its owner to the database.
+        It will also add the user's ID to the session cookie, and a value to say
+        they made a team.
+        """
         # names should be capitalised
         first_name = request.form['first_name'].capitalize()
         last_name = request.form['last_name'].capitalize()
@@ -111,6 +116,9 @@ def create_app():
             # add the competitor to the team
             query = con.execute("UPDATE individuals SET team_id = ? WHERE id = ?", (team_id, teamcreator))
             con.commit()
+            # remember who signed up, for list_events() to use
+            session["individual_id"] = teamcreator
+            session["team_creator"] = True
             return render_template("form/success/team.html", team_name=team_name, team_code=team_code, first_name=first_name)
 
     @app.get("/form/team")
@@ -119,9 +127,15 @@ def create_app():
 
     @app.get("/events")
     def list_events():
-        """TODO: make this a form lol"""
+        """
+        Present a form for what events someone can sign up to.
+        This is where users go after /form/team and /form/person.
+        """
+        if not session.get("individual_id"):
+            return "You need to sign up first!", 400
         con = db.get_db()
-        # select the event id & event name from events and look up the event type name too (it will be the field `type`)
+        # select the event id & event name from events and look up the event type name too 
+        # (it will be the field `type`)
         query = con.execute("""
             SELECT events.id, events.name, events.team_event, event_type.name AS type
             FROM events INNER JOIN event_type
@@ -132,6 +146,22 @@ def create_app():
         print(events)
         return render_template("form/event/list.html", events=events)
 
+    @app.post("/events")
+    def register_events():
+        """Add the user to events based on the form from list_events()."""
+        con = db.get_db()
+        if session.get("individual_id") and not session.get("team_creator"):
+            for event in request.form:
+                print(request.form[event])
+                individual_id = int(session["individual_id"])
+                event = int(event)
+                data = (event, 0, individual_id)
+                query = con.execute("""
+                    INSERT INTO entries (event_id, entry_type, individual_id)
+                    VALUES (?,?,?)
+                """, data)
+                con.commit()
+            return "okie!"
 
     @app.get("/flashtest")
     def flashtest():

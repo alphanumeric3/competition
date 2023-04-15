@@ -46,6 +46,8 @@ CREATE TABLE entries(
     team_id INTEGER,
     individual_id INTEGER,
     place INTEGER DEFAULT NULL,
+    -- nobody can enter the same thing twice
+    UNIQUE(event_id,entry_type,team_id,individual_id),
     FOREIGN KEY(event_id) REFERENCES events(id),
     FOREIGN KEY(team_id) REFERENCES teams(id),
     FOREIGN KEY(individual_id) REFERENCES individuals(id)
