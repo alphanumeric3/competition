@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Sign Up (i)
+Add a team
 {% endblock %}
 
 {% block content %}
-	<h1>Sign up (team)</h1>
+	<h1>Add a team</h1>
 	{% with messages = get_flashed_messages() %}
 		{% if messages %}
 			<ul class="messages">
@@ -15,13 +15,7 @@ Sign Up (i)
 			</ul>
 		{% endif %}
 	{% endwith %}
-	<form class="box" action="/form/team" method="post">
-		<label for="first_name">First name</label>
-		<input type="text" id="first_name" name="first_name" />
-
-		<label for="last_name">Last name</label>
-		<input type="text" id="last_name" name="last_name" />
-
+	<form class="box" action="/person/create" method="post">
 		<label for="team_name">Team name</label>
 		<input type="text" id="team_name" name="team_name" />
 		<button>Done</button>

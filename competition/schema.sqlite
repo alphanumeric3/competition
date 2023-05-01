@@ -30,27 +30,25 @@ CREATE TABLE individuals(
 
 CREATE TABLE teams(
     id INTEGER PRIMARY KEY ASC,
-    name TEXT NOT NULL,
-    creator INTEGER NOT NULL,
-    code INTEGER NOT NULL,
-    FOREIGN KEY(creator) REFERENCES individuals(id)
+    name TEXT NOT NULL
 );
 
-CREATE TABLE entries(
+CREATE TABLE individual_entries(
     event_id INTEGER NOT NULL,
-    -- 0 for individual, 1 for team. teams are more than just a simple
-    -- type so i didn't make a table like event_type for entry_type
-    entry_type INTEGER NOT NULL,
     -- TODO: these fields need a table constraint
     -- only one or the other can be set
-    team_id INTEGER,
     individual_id INTEGER,
     place INTEGER DEFAULT NULL,
-    -- nobody can enter the same thing twice
-    UNIQUE(event_id,entry_type,team_id,individual_id),
     FOREIGN KEY(event_id) REFERENCES events(id),
-    FOREIGN KEY(team_id) REFERENCES teams(id),
     FOREIGN KEY(individual_id) REFERENCES individuals(id)
+);
+
+CREATE TABLE team_entries(
+    event_id INTEGER NOT NULL,
+    team_id INTEGER,
+    place INTEGER DEFAULT NULL,
+    FOREIGN KEY(event_id) REFERENCES events(id),
+    FOREIGN KEY(team_id) REFERENCES teams(id)
 );
 
 -- this is all i really need, but it's still flexible

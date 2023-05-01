@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Sign Up (i)
+Success
 {% endblock %}
 
 {% block content %}
-	<h1>Success!</h1>
+	<h1>Success</h1>
 	{% with messages = get_flashed_messages() %}
 		{% if messages %}
 			<ul class="messages">
@@ -15,12 +15,10 @@ Sign Up (i)
 			</ul>
 		{% endif %}
 	{% endwith %}
-	<div class="box" action="/form/person" method="post">
+	<div class="box">
 		<p>
-			Welcome to <b>{{ team_name }}</b>, <b>{{ first_name }}</b>! Your teammates can use the code
-			<b>{{ team_code }}</b> when they sign up to join. Next, you need to choose events.
+			<b>{{ team_name }}</b> has been added.
 		</p>
-		<!-- todo: event entries -->
-		<a href="/events"><button>Next</button></a>
+		<a href="/"><button>Home</button></a>
 	</div>
 {% endblock %}

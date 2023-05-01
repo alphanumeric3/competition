@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Sign Up (i)
+Add a person
 {% endblock %}
 
 {% block content %}
@@ -22,8 +22,13 @@ Sign Up (i)
 		<label for="last_name">Last name</label>
 		<input type="text" id="last_name" name="last_name" />
 
-		<label for="team_code">Team code</label>
-		<input type="text" id="team_code" name="team_code" />
+		<label for="team">Team (optional)</label>
+		<select name="team" id="team">
+			<option value="">No team</option>
+			{% for team in teams %}
+			<option value="{{ team.id }}">{{ team.name }}</option>
+			{% endfor %}
+		</select>
 		<!-- todo: event entries -->
 		<button>Done</button>
 	</form>

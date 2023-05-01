@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Sign Up (i)
+Success
 {% endblock %}
 
 {% block content %}
-	<h1>Success!</h1>
+	<h1>Success</h1>
 	{% with messages = get_flashed_messages() %}
 		{% if messages %}
 			<ul class="messages">
@@ -15,14 +15,11 @@ Sign Up (i)
 			</ul>
 		{% endif %}
 	{% endwith %}
-	<div class="box" action="/form/person" method="post">
+	<div class="box">
 		<p>
-			Welcome, <b>{{ first_name }}</b>! Next, you need to choose your individual events.
-			{% if team_name %}
-			The leader of {{ team_name }} has chosen team events already.
-			{% endif %}
+			<b>{{ first_name }}</b> has been added.
 		</p>
 		<!-- todo: event entries -->
-		<a href="/events"><button>Next</button></a>
+		<a href="/"><button>Home</button></a>
 	</div>
 {% endblock %}
