@@ -106,11 +106,11 @@ def create_app():
         name = request.form['name']
         # this should be 1 or 0, which gets converted
         event_type = bool(request.form['type'])
-        event_category = request.form['category']
+        category = request.form['category']
         con = db.get_db()
         query = con.execute(
-            "INSERT INTO events (name, team_event, event_category) VALUES (?,?,?)",
-            (name,event_type,event_category)
+            "INSERT INTO events (name, team_event, category) VALUES (?,?,?)",
+            (name,event_type,category)
         ) # TODO: FIX WORDING!!!
         con.commit()
         return "response"
@@ -118,7 +118,7 @@ def create_app():
     @app.get("/event/create") # TODO: TODO: TODO: TODO: THIS THIS THIS!!!!!!
     def render_create_event():
         con = db.get_db()
-        query = con.execute("SELECT * FROM event_category")
+        query = con.execute("SELECT * FROM categories")
         categories = query.fetchall()
         return render_template("form/event.html", categories=categories)
         
