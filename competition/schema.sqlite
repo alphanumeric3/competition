@@ -2,11 +2,11 @@ DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS individuals;
 DROP TABLE IF EXISTS teams;
 DROP TABLE IF EXISTS entries;
-DROP TABLE IF EXISTS event_category;
+DROP TABLE IF EXISTS categories;
 
 -- event types are not defined by the server because this should be a 
 -- single source of truth
-CREATE TABLE event_category(
+CREATE TABLE categories(
     id INTEGER PRIMARY KEY ASC,
     name TEXT NOT NULL
 );
@@ -17,8 +17,8 @@ CREATE TABLE events(
     -- treat team_event as boolean
     -- 0 = individual, 1 = team
     team_event INTEGER NOT NULL DEFAULT FALSE,
-    event_category INTEGER NOT NULL,
-    FOREIGN KEY(event_category) REFERENCES event_category(id)
+    category INTEGER NOT NULL,
+    FOREIGN KEY(category) REFERENCES categories(id)
 );
 
 CREATE TABLE individuals(
@@ -53,7 +53,7 @@ CREATE TABLE team_entries(
 );
 
 -- this is all i really need, but it's still flexible
-INSERT INTO event_category (name) VALUES ("Athletic");
-INSERT INTO event_category (name) VALUES ("Academic");
-INSERT INTO events (name, event_category) VALUES ("Example Event",1);
-INSERT INTO events (name, team_event, event_category) VALUES ("Example Team Event",TRUE,1);
+INSERT INTO categories (name) VALUES ("Athletic");
+INSERT INTO categories (name) VALUES ("Academic");
+INSERT INTO events (name, category) VALUES ("Example Event",1);
+INSERT INTO events (name, team_event, category) VALUES ("Example Team Event",TRUE,1);
