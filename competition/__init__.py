@@ -132,8 +132,9 @@ def create_app():
         # select the event id & event name from events and look up the event type name too 
         # (it will be the field `type`)
         query = con.execute("""
-            SELECT events.id, events.name, events.team_event, event_category.name AS type
-            FROM events INNER JOIN event_category
+            SELECT events.id, events.name, events.team_event, categories.name AS type
+            FROM events INNER JOIN categories
+            ON categories.id = events.category
             GROUP BY events.id;
         """)
         events = query.fetchall()
