@@ -24,6 +24,7 @@ def create_app():
         return len(name) <= app.config['NAME_LIMIT'] and name.isalpha()
 
     def valid_team_name(name):
+        name = name.replace(' ', '')
         return len(name) <= app.config['NAME_LIMIT'] and name.isalnum()
 
     @app.route("/")
@@ -77,7 +78,7 @@ def create_app():
         print(team_name)
         name_limit = app.config['NAME_LIMIT']
         if not valid_team_name(team_name):
-            flash(f"Team names can't be longer than {app.config['NAME_LIMIT']}.")
+            flash(f"Team names can't be longer than {app.config['NAME_LIMIT']} characters and can't have special characters.")
             return redirect(url_for("create_team"))
 
         # query the DB to see if the name is taken
@@ -85,6 +86,7 @@ def create_app():
         if query.fetchone() is not None:
             flash("This team already exists.")
             return redirect(url_for("create_team"))
+
         else:
             # add the team
             query = con.execute("INSERT INTO teams (name) VALUES(?)", (team_name,))
@@ -101,8 +103,24 @@ def create_app():
 
     @app.post("/event/create")
     def create_event():
+        name = request.form['name']
+        # this should be 1 or 0, which gets converted
+        event_type = bool(request.form['type'])
+        event_category = request.form['category']
         con = db.get_db()
-        query = con.execute("SELECT * FROM event_types")
+        query = con.execute(
+            "INSERT INTO events (name, team_event, event_category) VALUES (?,?,?)",
+            (name,event_type,event_category)
+        ) # TODO: FIX WORDING!!!
+        con.commit()
+        return "response"
+
+    @app.get("/event/create") # TODO: TODO: TODO: TODO: THIS THIS THIS!!!!!!
+    def render_create_event():
+        con = db.get_db()
+        query = con.execute("SELECT * FROM event_category")
+        categories = query.fetchall()
+        return render_template("form/event.html", categories=categories)
         
 
     @app.get("/events")
@@ -114,8 +132,8 @@ def create_app():
         # select the event id & event name from events and look up the event type name too 
         # (it will be the field `type`)
         query = con.execute("""
-            SELECT events.id, events.name, events.team_event, event_type.name AS type
-            FROM events INNER JOIN event_type
+            SELECT events.id, events.name, events.team_event, event_category.name AS type
+            FROM events INNER JOIN event_category
             GROUP BY events.id;
         """)
         events = query.fetchall()
@@ -125,7 +143,10 @@ def create_app():
 
     @app.post("/events")
     def register_events():
-        """Add the user to events based on the form from list_events()."""
+        """
+        Add the user to events based on the form from list_events().
+        TODO: remove this, adding people to events should be under /person/<...>
+        """
         con = db.get_db()
         if session.get("individual_id") and not session.get("team_creator"):
             for event in request.form:
