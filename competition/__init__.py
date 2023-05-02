@@ -58,7 +58,7 @@ def create_app():
             (first_name,last_name,team_id)
         )
         con.commit()
-        return render_template("form/success/person.html", first_name=first_name, last_name=last_name)
+        return render_template("form/success.html", text=f"{first_name} {last_name}")
 
     @app.get("/person/create")
     def render_create_person():
@@ -95,7 +95,7 @@ def create_app():
             # add the competitor to the team
             # query = con.execute("UPDATE individuals SET team_id = ? WHERE id = ?", (team_id, person_id))
             con.commit()
-            return render_template("form/success/team.html", team_name=team_name)
+            return render_template("form/success.html", text=team_name)
 
     @app.get("/team/create")
     def render_create_team():
@@ -113,7 +113,7 @@ def create_app():
             (name,event_type,category)
         ) # TODO: FIX WORDING!!!
         con.commit()
-        return "response"
+        return render_template("form/success.html", text=name)
 
     @app.get("/event/create") # TODO: TODO: TODO: TODO: THIS THIS THIS!!!!!!
     def render_create_event():
