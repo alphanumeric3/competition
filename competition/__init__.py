@@ -47,7 +47,7 @@ def create_app():
         ## form validation starts here
         # validate the name, if it's invalid return an error
         if not valid_name(first_name) or not valid_name(last_name):
-            flash(f"Names are required, and can't be longer than {app.config['NAME_LIMIT']} characters.")
+            flash(f"Names are required, and can't be longer than {app.config['NAME_LIMIT']} characters and can't have special characters.")
             return redirect(url_for("create_person"))
         
         # check that the team exists
@@ -74,7 +74,7 @@ def create_app():
             event = int(event)
             print("handling event id", event)
             query = con.execute(
-                "INSERT INTO individual_entries (event_id,individual_id) VALUES (?,?)"
+                "INSERT INTO individual_entries (event_id,individual_id) VALUES (?,?)",
                 (event, individual_id)
             )
 
@@ -132,7 +132,7 @@ def create_app():
     def create_event():
         name = request.form['name']
         # this should be 1 or 0, which gets converted
-        event_type = bool(request.form['type'])
+        event_type = bool(int(request.form['type']))
         category = request.form['category']
         con = db.get_db()
         query = con.execute(

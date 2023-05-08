@@ -36,3 +36,13 @@ input, button {
 	margin-bottom: 0.5em;
 	list-style-type: none;
 }
+
+/* make tables nicer to read */
+tr:nth-child(1) {
+	/* alternating row background */
+    background-color: #ededed;
+}
+
+th {
+	font-weight: bold;
+}
