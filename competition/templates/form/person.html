@@ -29,7 +29,14 @@ Add a person
 			<option value="{{ team.id }}">{{ team.name }}</option>
 			{% endfor %}
 		</select>
-		<!-- todo: event entries -->
+		
+		<label>Choose events (max 5)</label>
+		{% for event in events %}
+		<div>
+			<label for="{{ event.id }}">{{ event.name }}</label>
+			<input type="checkbox" id="{{ event.id }}" name="events" value="{{ event.id }}" />
+		</div>
+		{% endfor %}
 		<button>Done</button>
 	</form>
 {% endblock %}

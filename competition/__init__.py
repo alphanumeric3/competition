@@ -39,8 +39,12 @@ def create_app():
         first_name = request.form['first_name'].capitalize()
         last_name = request.form['last_name'].capitalize()
         team_id = request.form.get('team')
+        events = request.form.getlist('events')
+        print(events)
         print(first_name, last_name, team_id)
         con = db.get_db()
+
+        ## form validation starts here
         # validate the name, if it's invalid return an error
         if not valid_name(first_name) or not valid_name(last_name):
             flash(f"Names are required, and can't be longer than {app.config['NAME_LIMIT']} characters.")
@@ -52,11 +56,28 @@ def create_app():
             flash("That team doesn't exist.")
             return redirect(url_for("create_person"))
 
+        # check there are 5 or less events checked
+        if len(events) >= 5 or len(events) == 0:
+            flash("Please select between 1 and 5 events.")
+            return redirect(url_for("create_person"))
+
+        ## database modification starts here
         # add the person to the database
         query = con.execute(
             "INSERT INTO individuals (first_name, last_name, team_id) VALUES(?,?,?)",
             (first_name,last_name,team_id)
         )
+        individual_id = query.lastrowid
+
+        # add the person to each event
+        for event in events:
+            event = int(event)
+            print("handling event id", event)
+            query = con.execute(
+                "INSERT INTO individual_entries (event_id,individual_id) VALUES (?,?)"
+                (event, individual_id)
+            )
+
         con.commit()
         return render_template("form/success.html", text=f"{first_name} {last_name}")
 
