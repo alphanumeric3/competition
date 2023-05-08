@@ -19,5 +19,13 @@ Add a team
 		<label for="team_name">Team name</label>
 		<input type="text" id="team_name" name="team_name" />
 		<button>Done</button>
+
+		<label>Choose events (max 5)</label>
+		{% for event in events %}
+		<div>
+			<label for="{{ event.id }}">{{ event.name }}</label>
+			<input type="checkbox" id="{{ event.id }}" name="{{ event.id }}" />
+		</div>
+		{% endfor %}
 	</form>
 {% endblock %}

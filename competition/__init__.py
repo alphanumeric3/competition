@@ -120,7 +120,10 @@ def create_app():
 
     @app.get("/team/create")
     def render_create_team():
-        return render_template("form/team.html")
+        con = db.get_db()
+        # get team events to choose from
+        events = con.execute("SELECT id, name FROM events WHERE team_event = true")
+        return render_template("form/team.html", events=events)
 
     @app.post("/event/create")
     def create_event():
