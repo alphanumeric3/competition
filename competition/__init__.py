@@ -85,8 +85,11 @@ def create_app():
     def render_create_person():
         """Render the form for adding a person."""
         con = db.get_db()
-        query = con.execute("SELECT id, name FROM teams")
-        return render_template("form/person.html", teams=query)
+        # get teams to choose from
+        teams = con.execute("SELECT id, name FROM teams")
+        # get events to choose from
+        events = con.execute("SELECT id, name FROM events WHERE team_event = false")
+        return render_template("form/person.html", teams=teams, events=events)
 
     @app.post("/team/create")
     def create_team():
