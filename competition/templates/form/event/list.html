@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Sign Up (i)
+Events
 {% endblock %}
 
 {% block content %}
@@ -15,17 +15,13 @@ Sign Up (i)
 			</ul>
 		{% endif %}
 	{% endwith %}
-	<form action="/events" method="post">
-		<ul>
-		{% for event in events %}
-			<li>
-				<label for="{{ event['id'] }}">
-					{{ event['name'] }} ({{ "Team" if event['team_event'] else "Individual" }}, {{ event['type'] }})
-				</label>
-				<input type="checkbox" id="{{ event['id'] }}" name="{{ event['id'] }}" />
-			</li>
-		{% endfor %}
-		</ul>
-	<button>Done</button>
-	</form>
+	<ul>
+	{% for event in events %}
+		<li>
+			<a href="/event/view/{{ event['id'] }}">
+				{{ event['name'] }} ({{ "Team" if event['team_event'] else "Individual" }}, {{ event['type'] }})
+			</a>
+		</li>
+	{% endfor %}
+	</ul>
 {% endblock %}
