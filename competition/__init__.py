@@ -136,22 +136,20 @@ def create_app():
         con.commit()
         return render_template("form/success.html", text=name)
 
-    @app.get("/event/create") # TODO: TODO: TODO: TODO: THIS THIS THIS!!!!!!
+    @app.get("/event/create")
     def render_create_event():
+        """Return the form for adding an event."""
         con = db.get_db()
         query = con.execute("SELECT * FROM categories")
         categories = query.fetchall()
         return render_template("form/event.html", categories=categories)
         
 
-    @app.get("/events")
+    @app.get("/event/list")
     def list_events():
-        """
-        List the events.
-        """
+        """List the events."""
         con = db.get_db()
-        # select the event id & event name from events and look up the event type name too 
-        # (it will be the field `type`)
+        # select all events and their categories
         query = con.execute("""
             SELECT events.id, events.name, events.team_event, categories.name AS type
             FROM events INNER JOIN categories
