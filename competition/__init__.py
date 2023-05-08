@@ -163,6 +163,41 @@ def create_app():
         print(events)
         return render_template("form/event/list.html", events=events)
 
+    @app.get("/event/view/<int:id>")
+    def view_event(id):
+        """View a specific event and who is participating in it."""
+        con = db.get_db()
+        # find the event, get its name, and determine if team or individual
+        query = con.execute("SELECT name, team_event FROM events WHERE id = ?", (id,))
+        results = query.fetchone()
+        event_name = results['name']
+        team_event = bool(int(results['team_event']))
+        
+        # if team, get info from team_entries
+        if team_event:
+            # select the id, name and place/points for the event
+            query = con.execute("""
+            SELECT team_id, name, place
+            FROM team_entries INNER JOIN teams on team_id = teams.id
+            WHERE event_id = ?
+            GROUP BY team_id
+            """, (id,))
+            results = query.fetchall()
+        # else, get info from individual_entries
+        else:
+            # select the id, name and place/points for the event
+            query = con.execute("""
+            SELECT individual_id, first_name || " " || last_name as name, place
+            FROM individual_entries INNER JOIN individuals on individual_id = individuals.id
+            WHERE event_id = ?
+            GROUP BY individual_id
+            """, (id,))
+            results = query.fetchall()
+            print(results)
+
+        # render the final page 
+        return render_template("form/event/view.html", entries=results, event_name=event_name)
+
     @app.post("/events")
     def register_events():
         """

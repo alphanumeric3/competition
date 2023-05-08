@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{{ event_name }}
+{% endblock %}
+
+{% block content %}
+	<h1>{{ event_name }}</h1>
+	{% with messages = get_flashed_messages() %}
+		{% if messages %}
+			<ul class="messages">
+			{% for message in messages %}
+				<li><p>! {{message}}</p></li>
+			{% endfor %}
+			</ul>
+		{% endif %}
+	{% endwith %}
+	<table>
+		<tr>
+			<th>Name</th>
+			<th>Place</th>
+		</tr>
+	{% for entry in entries %}
+		<tr>
+			<td>{{ entry['name'] }}</td>
+			<td>{{ entry['place'] }}</td>
+		</tr>
+	{% endfor %}
+	</table>
+{% endblock %}
