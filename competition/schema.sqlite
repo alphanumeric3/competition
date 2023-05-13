@@ -39,7 +39,7 @@ CREATE TABLE individual_entries(
     -- TODO: these fields need a table constraint
     -- only one or the other can be set
     individual_id INTEGER,
-    place INTEGER DEFAULT NULL,
+    score INTEGER DEFAULT NULL,
     FOREIGN KEY(event_id) REFERENCES events(id),
     FOREIGN KEY(individual_id) REFERENCES individuals(id)
 );
@@ -47,7 +47,7 @@ CREATE TABLE individual_entries(
 CREATE TABLE team_entries(
     event_id INTEGER NOT NULL,
     team_id INTEGER,
-    place INTEGER DEFAULT NULL,
+    score INTEGER DEFAULT NULL,
     FOREIGN KEY(event_id) REFERENCES events(id),
     FOREIGN KEY(team_id) REFERENCES teams(id)
 );
