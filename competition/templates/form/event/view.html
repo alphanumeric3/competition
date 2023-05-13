@@ -7,6 +7,11 @@
 {% block content %}
 	<h1>{{ event_name }}</h1>
 	{% include 'flashed_messages.html' %}
+	{% if not printed_report %}
+	<a href="/event/view/{{ event_id }}?print=1">View printable report</a>
+	{% else %}
+	{% block nav %}{% endblock %}
+	{% endif %}
 	<table>
 		<tr>
 			<th>Name</th>
@@ -18,21 +23,23 @@
 			<td>
 				<input
 					form="form_{{ entry['id'] }}"
+					name="score"
+					type="number"
+					value="{{ entry['score'] }}"
+				>
+				{% if not printed_report %}
+				<input
+					form="form_{{ entry['id'] }}"
 					name="id"
 					type="hidden"
 					value="{{ entry['id'] }}"
 				>
 				<input
 					form="form_{{ entry['id'] }}"
-					name="score"
-					type="number"
-					id="{{ entry['id'] }}"
-					value="{{ entry['score'] }}"
-				>
-				<input
-					form="form_{{ entry['id'] }}"
 					type="submit"
+					value="Save"
 				>
+				{% endif %}
 			</td>
 		</tr>
 	{% endfor %}

@@ -182,6 +182,8 @@ def create_app():
         results = query.fetchone()
         event_name = results['name']
         team_event = bool(int(results['team_event']))
+        # determine if buttons should be hidden
+        printed_report = request.args.get("print")
         
         # if team, get info from team_entries
         if team_event:
@@ -210,7 +212,8 @@ def create_app():
             "form/event/view.html",
             entries=results,
             event_name=event_name,
-            event_id=event_id
+            event_id=event_id,
+            printed_report=printed_report
         )
 
     @app.post("/event/update/<int:event_id>")
