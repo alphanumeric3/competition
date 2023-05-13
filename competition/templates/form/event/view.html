@@ -18,13 +18,42 @@
 	<table>
 		<tr>
 			<th>Name</th>
-			<th>Place</th>
+			<th>Score</th>
 		</tr>
 	{% for entry in entries %}
 		<tr>
 			<td>{{ entry['name'] }}</td>
-			<td>{{ entry['place'] }}</td>
+			<td>
+				<input
+					form="form_{{ entry['id'] }}"
+					name="id"
+					type="hidden"
+					value="{{ entry['id'] }}"
+				>
+				<input
+					form="form_{{ entry['id'] }}"
+					name="score"
+					type="number"
+					id="{{ entry['id'] }}"
+					value="{{ entry['score'] }}"
+				>
+				<input
+					form="form_{{ entry['id'] }}"
+					type="submit"
+				>
+			</td>
 		</tr>
 	{% endfor %}
 	</table>
+	
+	{% for entry in entries %}
+	<form
+		name="form_{{ entry['id'] }}"
+		id="form_{{ entry['id'] }}"
+		action="/event/update/{{ event_id }}"
+		method="post"
+	>
+	</form>
+	{% endfor %}
+	
 {% endblock %}

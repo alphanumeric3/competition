@@ -47,18 +47,21 @@ def create_app():
         ## form validation starts here
         # validate the name, if it's invalid return an error
         if not valid_name(first_name) or not valid_name(last_name):
-            flash(f"Names are required, and can't be longer than {app.config['NAME_LIMIT']} characters and can't have special characters.")
+            flash(
+                f"Names are required, and can't be longer than {app.config['NAME_LIMIT']} characters and can't have special characters.",
+                category="error"
+            )
             return redirect(url_for("create_person"))
         
         # check that the team exists
         query = con.execute("SELECT id FROM teams WHERE id = ?", (team_id,))
         if query.fetchone is None:
-            flash("That team doesn't exist.")
+            flash("That team doesn't exist.", category="error")
             return redirect(url_for("create_person"))
 
         # check there are 5 or less events checked
         if len(events) >= 5 or len(events) == 0:
-            flash("Please select between 1 and 5 events.")
+            flash("Please select between 1 and 5 events.", category="error")
             return redirect(url_for("create_person"))
 
         ## database modification starts here
@@ -102,7 +105,10 @@ def create_app():
         print(team_name)
         name_limit = app.config['NAME_LIMIT']
         if not valid_team_name(team_name):
-            flash(f"Team names can't be longer than {app.config['NAME_LIMIT']} characters and can't have special characters.")
+            flash(
+                f"Team names can't be longer than {app.config['NAME_LIMIT']} characters and can't have special characters.",
+                category="error"
+            )
             return redirect(url_for("create_team"))
 
         # query the DB to see if the name is taken
@@ -137,8 +143,8 @@ def create_app():
         con = db.get_db()
         query = con.execute(
             "INSERT INTO events (name, team_event, category) VALUES (?,?,?)",
-            (name,event_type,category)
-        ) # TODO: FIX WORDING!!!
+            (name, event_type, category)
+        )
         con.commit()
         return render_template("form/success.html", text=name)
 
@@ -167,12 +173,12 @@ def create_app():
         print(events)
         return render_template("form/event/list.html", events=events)
 
-    @app.get("/event/view/<int:id>")
-    def view_event(id):
+    @app.get("/event/view/<int:event_id>")
+    def view_event(event_id):
         """View a specific event and who is participating in it."""
         con = db.get_db()
         # find the event, get its name, and determine if team or individual
-        query = con.execute("SELECT name, team_event FROM events WHERE id = ?", (id,))
+        query = con.execute("SELECT name, team_event FROM events WHERE id = ?", (event_id,))
         results = query.fetchone()
         event_name = results['name']
         team_event = bool(int(results['team_event']))
@@ -181,26 +187,64 @@ def create_app():
         if team_event:
             # select the id, name and place/points for the event
             query = con.execute("""
-            SELECT team_id, name, place
+            SELECT team_id as id, name, score
             FROM team_entries INNER JOIN teams on team_id = teams.id
             WHERE event_id = ?
             GROUP BY team_id
-            """, (id,))
+            """, (event_id,))
             results = query.fetchall()
         # else, get info from individual_entries
         else:
             # select the id, name and place/points for the event
             query = con.execute("""
-            SELECT individual_id, first_name || " " || last_name as name, place
+            SELECT individual_id as id, first_name || " " || last_name as name, score
             FROM individual_entries INNER JOIN individuals on individual_id = individuals.id
             WHERE event_id = ?
             GROUP BY individual_id
-            """, (id,))
+            """, (event_id,))
             results = query.fetchall()
             print(results)
 
         # render the final page 
-        return render_template("form/event/view.html", entries=results, event_name=event_name)
+        return render_template(
+            "form/event/view.html",
+            entries=results,
+            event_name=event_name,
+            event_id=event_id
+        )
+
+    @app.post("/event/update/<int:event_id>")
+    def update_event(event_id):
+        """
+        Update a competitor's score for an event. The only parameters
+        are `id` and `score`.
+        """
+        con = db.get_db()
+        # determine if the event is team or individual
+        query = con.execute("SELECT team_event FROM events WHERE id = ?", (event_id,))
+        results = query.fetchone()
+        team_event = bool(int(results['team_event']))
+        
+        # check request parameters
+        competitor_id = int(request.form['id']) # team/person
+        score = int(request.form['score']) # their score
+
+        # decide what table to use
+        if team_event:
+            query = con.execute(
+                "UPDATE team_entries SET score = ? WHERE event_id = ? AND team_id = ?",
+                (score, event_id, competitor_id)
+            )
+        else:
+            query = con.execute(
+                "UPDATE individual_entries SET score = ? WHERE event_id = ? AND individual_id = ?",
+                (score, event_id, competitor_id)
+            )
+
+        con.commit()
+        flash("Updated score.", category="success")
+        return redirect(url_for('view_event', event_id=event_id))
+
 
     @app.post("/events")
     def register_events():

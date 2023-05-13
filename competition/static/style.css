@@ -23,18 +23,26 @@ input, button {
 	border: 1px black solid;
 }
 
-/* style for flashed messages. .messages is a <ul>*/
+/* style for flashed messages. .messages is a <ul> */
 .messages {
 	padding-left: inherit;
 }
 
 .messages li {
-	background: red;
 	max-width: fit-content;
-	color: #eff;
 	padding: 0.5em;
 	margin-bottom: 0.5em;
 	list-style-type: none;
+}
+
+li.error {
+	background: #ffd3d3;
+	border-left: red solid 5px;
+}
+
+li.success {
+	background: #d3ffd3;
+	border-left: green solid 5px;
 }
 
 /* make tables nicer to read */
