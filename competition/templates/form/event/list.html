@@ -6,15 +6,7 @@ Events
 
 {% block content %}
 	<h1>Events</h1>
-	{% with messages = get_flashed_messages() %}
-		{% if messages %}
-			<ul class="messages">
-			{% for message in messages %}
-				<li><p>! {{message}}</p></li>
-			{% endfor %}
-			</ul>
-		{% endif %}
-	{% endwith %}
+	{% include 'flashed_messages.html' %}
 	<ul>
 	{% for event in events %}
 		<li>

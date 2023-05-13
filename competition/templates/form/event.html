@@ -6,15 +6,7 @@ Add an event
 
 {% block content %}
 	<h1>Add an event</h1>
-	{% with messages = get_flashed_messages() %}
-		{% if messages %}
-			<ul class="messages">
-			{% for message in messages %}
-				<li><p>! {{message}}</p></li>
-			{% endfor %}
-			</ul>
-		{% endif %}
-	{% endwith %}
+	{% include 'flashed_messages.html' %}
 	<form class="box" action="/event/create" method="post">
 		<label for="name">Event name</label>
 		<input type="text" id="name" name="name" />

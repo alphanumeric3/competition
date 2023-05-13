@@ -6,15 +6,7 @@ Add a person
 
 {% block content %}
 	<h1>Sign up (individual)</h1>
-	{% with messages = get_flashed_messages(with_categories=True) %}
-		{% if messages %}
-			<ul class="messages">
-			{% for message in messages %}
-				<li class="{{ message[0] }}">{{ message[1] }}</li>
-			{% endfor %}
-			</ul>
-		{% endif %}
-	{% endwith %}
+	{% include 'flashed_messages.html' %}
 	<form class="box" action="/person/create" method="post">
 		<label for="first_name">First name</label>
 		<input type="text" id="first_name" name="first_name" />

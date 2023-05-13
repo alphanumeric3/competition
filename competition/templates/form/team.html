@@ -6,15 +6,7 @@ Add a team
 
 {% block content %}
 	<h1>Add a team</h1>
-	{% with messages = get_flashed_messages() %}
-		{% if messages %}
-			<ul class="messages">
-			{% for message in messages %}
-				<li><p>! {{message}}</p></li>
-			{% endfor %}
-			</ul>
-		{% endif %}
-	{% endwith %}
+	{% include 'flashed_messages.html' %}
 	<form class="box" action="/team/create" method="post">
 		<label for="team_name">Team name</label>
 		<input type="text" id="team_name" name="team_name" />
