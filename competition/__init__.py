@@ -100,9 +100,10 @@ def create_app():
         Create a team.
         """
         team_name = request.form['team_name']
+        events = request.form.getlist('events')
         con = db.get_db()
         # validate the team name
-        print(team_name)
+        print(team_name, events)
         name_limit = app.config['NAME_LIMIT']
         if not valid_team_name(team_name):
             flash(
@@ -111,10 +112,15 @@ def create_app():
             )
             return redirect(url_for("create_team"))
 
+        # validate the choice of events
+        if len(events) >= 5 or len(events) == 0:
+            flash("Please select between 1 and 5 events.", category="error")
+            return redirect(url_for("create_team"))
+
         # query the DB to see if the name is taken
         query = con.execute("SELECT name FROM teams WHERE name = ?", (team_name,))
         if query.fetchone() is not None:
-            flash("This team already exists.")
+            flash("This team already exists.", category="error")
             return redirect(url_for("create_team"))
 
         else:
@@ -122,8 +128,16 @@ def create_app():
             query = con.execute("INSERT INTO teams (name) VALUES(?)", (team_name,))
             team_id = query.lastrowid # team's id
             print("team id", team_id)
-            # add the competitor to the team
-            # query = con.execute("UPDATE individuals SET team_id = ? WHERE id = ?", (team_id, person_id))
+
+            # add the team to each event
+            for event in events:
+                event = int(event)
+                print("handling event id", event)
+                query = con.execute(
+                    "INSERT INTO team_entries (event_id, team_id) VALUES (?,?)",
+                    (event, team_id)
+                )
+            
             con.commit()
             return render_template("form/success.html", text=team_name)
 

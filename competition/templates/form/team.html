@@ -16,7 +16,7 @@ Add a team
 		{% for event in events %}
 		<div>
 			<label for="{{ event.id }}">{{ event.name }}</label>
-			<input type="checkbox" id="{{ event.id }}" name="{{ event.id }}" />
+			<input type="checkbox" id="{{ event.id }}" name="events" value="{{ event.id }}" />
 		</div>
 		{% endfor %}
 	</form>
