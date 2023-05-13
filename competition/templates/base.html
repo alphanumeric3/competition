@@ -5,9 +5,11 @@
 		<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 	</head>
 	<body>
+		{% block nav %}
 		<nav>
 			<a href="/">Home</a>
 		</nav>
+		{% endblock %}
 		{% block content %}{% endblock %}
 	</body>
 </html>
