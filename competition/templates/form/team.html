@@ -1,29 +1,23 @@
 {% extends 'base.html' %}
 
 {% block title %}
-Sign Up (i)
+Add a team
 {% endblock %}
 
 {% block content %}
-	<h1>Sign up (team)</h1>
-	{% with messages = get_flashed_messages() %}
-		{% if messages %}
-			<ul class="messages">
-			{% for message in messages %}
-				<li><p>! {{message}}</p></li>
-			{% endfor %}
-			</ul>
-		{% endif %}
-	{% endwith %}
-	<form class="box" action="/form/team" method="post">
-		<label for="first_name">First name</label>
-		<input type="text" id="first_name" name="first_name" />
-
-		<label for="last_name">Last name</label>
-		<input type="text" id="last_name" name="last_name" />
-
+	<h1>Add a team</h1>
+	{% include 'flashed_messages.html' %}
+	<form class="box" action="/team/create" method="post">
 		<label for="team_name">Team name</label>
 		<input type="text" id="team_name" name="team_name" />
 		<button>Done</button>
+
+		<label>Choose events (max 5)</label>
+		{% for event in events %}
+		<div>
+			<label for="{{ event.id }}">{{ event.name }}</label>
+			<input type="checkbox" id="{{ event.id }}" name="events" value="{{ event.id }}" />
+		</div>
+		{% endfor %}
 	</form>
 {% endblock %}

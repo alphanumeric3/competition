@@ -24,121 +24,162 @@ def create_app():
         return len(name) <= app.config['NAME_LIMIT'] and name.isalpha()
 
     def valid_team_name(name):
+        name = name.replace(' ', '')
         return len(name) <= app.config['NAME_LIMIT'] and name.isalnum()
 
     @app.route("/")
     def homepage():
         return render_template("home.html")
 
-    @app.post("/form/person")
-    def form_person():
-        """Handle the individual signup form and add person to the database."""
+    @app.post("/person/create")
+    def create_person():
+        """Add a person."""
+        # capitalise the name
+        print(request.form)
         first_name = request.form['first_name'].capitalize()
         last_name = request.form['last_name'].capitalize()
-        team_code = request.form.get('team_code')
-        team_id = None # used later in the query, stays None if no code given
-        team_name = None # used in the person_success template if a team is joined
+        team_id = request.form.get('team')
+        events = request.form.getlist('events')
+        print(events)
+        print(first_name, last_name, team_id)
         con = db.get_db()
 
-        print(first_name, last_name, type(team_code))
-
-        # check name length
+        ## form validation starts here
+        # validate the name, if it's invalid return an error
         if not valid_name(first_name) or not valid_name(last_name):
-            flash(f"Names can't be longer than {app.config['NAME_LIMIT']} characters.")
-            return redirect(url_for("form_person"))
+            flash(
+                f"Names are required, and can't be longer than {app.config['NAME_LIMIT']} characters and can't have special characters.",
+                category="error"
+            )
+            return redirect(url_for("create_person"))
+        
+        # check that the team exists
+        query = con.execute("SELECT id FROM teams WHERE id = ?", (team_id,))
+        if query.fetchone is None:
+            flash("That team doesn't exist.", category="error")
+            return redirect(url_for("create_person"))
 
-        # if team code given, validate it
-        if team_code == "":
-            pass
-        elif team_code.isnumeric() and len(team_code) == 6:
-            team_code = int(team_code)
-            # lookup team by the code given
-            query = con.execute("SELECT name, id FROM teams WHERE code = ?", (team_code,))
-            result = query.fetchone()
-            if result is None: # if nonexistent team given, show an error
-                flash("Team does not exist.")
-                return redirect(url_for("form_person"))
-            else: # if team exists, take id and name
-                team_id = result['id']
-                team_name = result['name']
-                print(team_id, team_name)
-        else: # if it's not a 6 digit code, show an error
-            flash("Invalid team code. It should be 6 digits.")
-            return redirect(url_for("form_person"))
-            
-        # add the competitor to the database
-        query = con.execute("INSERT INTO individuals (first_name, last_name, team_id) VALUES(?,?,?)", (first_name,last_name,team_id))
+        # check there are 5 or less events checked
+        if len(events) >= 5 or len(events) == 0:
+            flash("Please select between 1 and 5 events.", category="error")
+            return redirect(url_for("create_person"))
+
+        ## database modification starts here
+        # add the person to the database
+        query = con.execute(
+            "INSERT INTO individuals (first_name, last_name, team_id) VALUES(?,?,?)",
+            (first_name,last_name,team_id)
+        )
+        individual_id = query.lastrowid
+
+        # add the person to each event
+        for event in events:
+            event = int(event)
+            print("handling event id", event)
+            query = con.execute(
+                "INSERT INTO individual_entries (event_id,individual_id) VALUES (?,?)",
+                (event, individual_id)
+            )
+
         con.commit()
-        session["individual_id"] = query.lastrowid
-        return render_template("form/success/person.html", team_name=team_name, team_code=team_code, first_name=first_name)
+        return render_template("form/success.html", text=f"{first_name} {last_name}")
 
-    @app.get("/form/person")
-    def render_form_person():
-        return render_template("form/person.html")
-
-    @app.post("/form/team")
-    def form_team():
-        """
-        Handle the team signup form and add the team and its owner to the database.
-        It will also add the user's ID to the session cookie, and a value to say
-        they made a team.
-        """
-        # names should be capitalised
-        first_name = request.form['first_name'].capitalize()
-        last_name = request.form['last_name'].capitalize()
-        team_name = request.form['team_name']
+    @app.get("/person/create")
+    def render_create_person():
+        """Render the form for adding a person."""
         con = db.get_db()
+        # get teams to choose from
+        teams = con.execute("SELECT id, name FROM teams")
+        # get events to choose from
+        events = con.execute("SELECT id, name FROM events WHERE team_event = false")
+        return render_template("form/person.html", teams=teams, events=events)
 
-        print(first_name, last_name, team_name)
-
-        # validate the names
+    @app.post("/team/create")
+    def create_team():
+        """
+        Create a team.
+        """
+        team_name = request.form['team_name']
+        events = request.form.getlist('events')
+        con = db.get_db()
+        # validate the team name
+        print(team_name, events)
         name_limit = app.config['NAME_LIMIT']
-        if not valid_name(first_name) or not valid_name(last_name) or not valid_team_name(team_name):
-            flash(f"Names can't be longer than {app.config['NAME_LIMIT']} characters, and can only have letters. Team names can have numbers.")
-            return redirect(url_for("form_team"))
+        if not valid_team_name(team_name):
+            flash(
+                f"Team names can't be longer than {app.config['NAME_LIMIT']} characters and can't have special characters.",
+                category="error"
+            )
+            return redirect(url_for("create_team"))
+
+        # validate the choice of events
+        if len(events) >= 5 or len(events) == 0:
+            flash("Please select between 1 and 5 events.", category="error")
+            return redirect(url_for("create_team"))
 
         # query the DB to see if the name is taken
-        query = con.execute("SELECT * FROM teams WHERE name = ?", (team_name,))
+        query = con.execute("SELECT name FROM teams WHERE name = ?", (team_name,))
         if query.fetchone() is not None:
-            flash("This team already exists.")
-            return redirect(url_for("form_team"))
+            flash("This team already exists.", category="error")
+            return redirect(url_for("create_team"))
+
         else:
-            # generate a 6 digit code for others to join
-            team_code = randint(100000, 999999)
-            # add the competitor first
-            query = con.execute("INSERT INTO individuals (first_name, last_name) VALUES(?,?)", (first_name, last_name))
-            teamcreator = query.lastrowid # this is the competitor's id
-            print("team creator id", teamcreator)
-            # add the team next
-            query = con.execute("INSERT INTO teams (name, creator, code) VALUES(?,?,?)", (team_name, teamcreator, team_code))
+            # add the team
+            query = con.execute("INSERT INTO teams (name) VALUES(?)", (team_name,))
             team_id = query.lastrowid # team's id
             print("team id", team_id)
-            # add the competitor to the team
-            query = con.execute("UPDATE individuals SET team_id = ? WHERE id = ?", (team_id, teamcreator))
+
+            # add the team to each event
+            for event in events:
+                event = int(event)
+                print("handling event id", event)
+                query = con.execute(
+                    "INSERT INTO team_entries (event_id, team_id) VALUES (?,?)",
+                    (event, team_id)
+                )
+            
             con.commit()
-            # remember who signed up, for list_events() to use
-            session["individual_id"] = teamcreator
-            session["team_creator"] = True
-            return render_template("form/success/team.html", team_name=team_name, team_code=team_code, first_name=first_name)
+            return render_template("form/success.html", text=team_name)
 
-    @app.get("/form/team")
-    def render_form_team():
-        return render_template("form/team.html")
-
-    @app.get("/events")
-    def list_events():
-        """
-        Present a form for what events someone can sign up to.
-        This is where users go after /form/team and /form/person.
-        """
-        if not session.get("individual_id"):
-            return "You need to sign up first!", 400
+    @app.get("/team/create")
+    def render_create_team():
         con = db.get_db()
-        # select the event id & event name from events and look up the event type name too 
-        # (it will be the field `type`)
+        # get team events to choose from
+        events = con.execute("SELECT id, name FROM events WHERE team_event = true")
+        return render_template("form/team.html", events=events)
+
+    @app.post("/event/create")
+    def create_event():
+        name = request.form['name']
+        # this should be 1 or 0, which gets converted
+        event_type = bool(int(request.form['type']))
+        category = request.form['category']
+        con = db.get_db()
+        query = con.execute(
+            "INSERT INTO events (name, team_event, category) VALUES (?,?,?)",
+            (name, event_type, category)
+        )
+        con.commit()
+        return render_template("form/success.html", text=name)
+
+    @app.get("/event/create")
+    def render_create_event():
+        """Return the form for adding an event."""
+        con = db.get_db()
+        query = con.execute("SELECT * FROM categories")
+        categories = query.fetchall()
+        return render_template("form/event.html", categories=categories)
+        
+
+    @app.get("/event/list")
+    def list_events():
+        """List the events."""
+        con = db.get_db()
+        # select all events and their categories
         query = con.execute("""
-            SELECT events.id, events.name, events.team_event, event_type.name AS type
-            FROM events INNER JOIN event_type
+            SELECT events.id, events.name, events.team_event, categories.name AS type
+            FROM events INNER JOIN categories
+            ON categories.id = events.category
             GROUP BY events.id;
         """)
         events = query.fetchall()
@@ -146,9 +187,88 @@ def create_app():
         print(events)
         return render_template("form/event/list.html", events=events)
 
+    @app.get("/event/view/<int:event_id>")
+    def view_event(event_id):
+        """View a specific event and who is participating in it."""
+        con = db.get_db()
+        # find the event, get its name, and determine if team or individual
+        query = con.execute("SELECT name, team_event FROM events WHERE id = ?", (event_id,))
+        results = query.fetchone()
+        event_name = results['name']
+        team_event = bool(int(results['team_event']))
+        # determine if buttons should be hidden
+        printed_report = request.args.get("print")
+        
+        # if it's a team event, get info from team_entries
+        if team_event:
+            # select the id, name and place/points for the event
+            query = con.execute("""
+            SELECT team_id as id, name, score
+            FROM team_entries INNER JOIN teams on team_id = teams.id
+            WHERE event_id = ?
+            GROUP BY team_id
+            """, (event_id,))
+            results = query.fetchall()
+        # else, get info from individual_entries
+        else:
+            # select the id, name and place/points for the event
+            query = con.execute("""
+            SELECT individual_id as id, first_name || " " || last_name as name, score
+            FROM individual_entries INNER JOIN individuals on individual_id = individuals.id
+            WHERE event_id = ?
+            GROUP BY individual_id
+            """, (event_id,))
+            results = query.fetchall()
+            print(results)
+
+        # render the final page 
+        return render_template(
+            "form/event/view.html",
+            entries=results,
+            event_name=event_name,
+            event_id=event_id,
+            printed_report=printed_report
+        )
+
+    @app.post("/event/update/<int:event_id>")
+    def update_event(event_id):
+        """
+        Update a competitor's score for an event. The only parameters
+        are `id` and `score`.
+        """
+        con = db.get_db()
+        # determine if the event is team or individual
+        query = con.execute("SELECT team_event FROM events WHERE id = ?", (event_id,))
+        results = query.fetchone()
+        team_event = bool(int(results['team_event']))
+        
+        # check request parameters
+        competitor_id = int(request.form['id']) # team/person
+        score = int(request.form['score']) # their score
+
+        # decide what table to use
+        if team_event:
+            query = con.execute(
+                "UPDATE team_entries SET score = ? WHERE event_id = ? AND team_id = ?",
+                (score, event_id, competitor_id)
+            )
+        else:
+            query = con.execute(
+                "UPDATE individual_entries SET score = ? WHERE event_id = ? AND individual_id = ?",
+                (score, event_id, competitor_id)
+            )
+
+        con.commit()
+        flash("Updated score.", category="success")
+        return redirect(url_for('view_event', event_id=event_id))
+
+
     @app.post("/events")
     def register_events():
-        """Add the user to events based on the form from list_events()."""
+        """
+        Add the user to events based on the form from list_events().
+        TODO: remove this, adding people to events should be under /person/<...>
+        """
         con = db.get_db()
         if session.get("individual_id") and not session.get("team_creator"):
             for event in request.form:
@@ -166,6 +286,6 @@ def create_app():
     @app.get("/flashtest")
     def flashtest():
         flash("this is a flashed message")
-        return redirect(url_for("form_person"))
+        return redirect(url_for("create_person"))
 
     return app

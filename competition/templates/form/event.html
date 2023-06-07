@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Add an event
+{% endblock %}
+
+{% block content %}
+	<h1>Add an event</h1>
+	{% include 'flashed_messages.html' %}
+	<form class="box" action="/event/create" method="post">
+		<label for="name">Event name</label>
+		<input type="text" id="name" name="name" />
+		<label for="type">Event type</label>
+		<select id="type" name="type">
+			<option value="0">Individual</option>
+			<option value="1">Team</option>
+		</select>
+		<label for="category">Event category</label>
+		<select id="category" name="category">
+			{% for category in categories %}
+			<option value="{{ category.id }}">{{ category.name }}</option>
+			{% endfor %}
+		</select>
+		<button>Done</button>
+	</form>
+{% endblock %}

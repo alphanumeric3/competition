@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}
+{{ event_name }}
+{% endblock %}
+
+{% block content %}
+	<h1>{{ event_name }}</h1>
+	{% include 'flashed_messages.html' %}
+	{% if not printed_report %}
+	<a href="/event/view/{{ event_id }}?print=1">View printable report</a>
+	{% endif %}
+	<table>
+		<tr>
+			<th>Name</th>
+			<th>Score</th>
+		</tr>
+	{% for entry in entries %}
+		<tr>
+			<td>{{ entry['name'] }}</td>
+			<td>
+				{% if not printed_report %}
+				<input
+					form="form_{{ entry['id'] }}"
+					name="score"
+					type="number"
+					value="{{ entry['score'] }}"
+				>
+				<input
+					form="form_{{ entry['id'] }}"
+					name="id"
+					type="hidden"
+					value="{{ entry['id'] }}"
+				>
+				<input
+					form="form_{{ entry['id'] }}"
+					type="submit"
+					value="Save"
+				>
+				{% else %}
+				{{ entry['score'] }}
+				{% endif %}
+			</td>
+		</tr>
+	{% endfor %}
+	</table>
+	
+	{% for entry in entries %}
+	<form
+		name="form_{{ entry['id'] }}"
+		id="form_{{ entry['id'] }}"
+		action="/event/update/{{ event_id }}"
+		method="post"
+	>
+	</form>
+	{% endfor %}
+	
+{% endblock %}

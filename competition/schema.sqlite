@@ -2,11 +2,11 @@ DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS individuals;
 DROP TABLE IF EXISTS teams;
 DROP TABLE IF EXISTS entries;
-DROP TABLE IF EXISTS event_type;
+DROP TABLE IF EXISTS categories;
 
 -- event types are not defined by the server because this should be a 
 -- single source of truth
-CREATE TABLE event_type(
+CREATE TABLE categories(
     id INTEGER PRIMARY KEY ASC,
     name TEXT NOT NULL
 );
@@ -15,9 +15,10 @@ CREATE TABLE events(
     id INTEGER PRIMARY KEY ASC,
     name TEXT NOT NULL,
     -- treat team_event as boolean
+    -- 0 = individual, 1 = team
     team_event INTEGER NOT NULL DEFAULT FALSE,
-    event_type INTEGER NOT NULL,
-    FOREIGN KEY(event_type) REFERENCES event_type(id)
+    category INTEGER NOT NULL,
+    FOREIGN KEY(category) REFERENCES categories(id)
 );
 
 CREATE TABLE individuals(
@@ -30,31 +31,29 @@ CREATE TABLE individuals(
 
 CREATE TABLE teams(
     id INTEGER PRIMARY KEY ASC,
-    name TEXT NOT NULL,
-    creator INTEGER NOT NULL,
-    code INTEGER NOT NULL,
-    FOREIGN KEY(creator) REFERENCES individuals(id)
+    name TEXT NOT NULL
 );
 
-CREATE TABLE entries(
+CREATE TABLE individual_entries(
     event_id INTEGER NOT NULL,
-    -- 0 for individual, 1 for team. teams are more than just a simple
-    -- type so i didn't make a table like event_type for entry_type
-    entry_type INTEGER NOT NULL,
     -- TODO: these fields need a table constraint
     -- only one or the other can be set
-    team_id INTEGER,
     individual_id INTEGER,
-    place INTEGER DEFAULT NULL,
-    -- nobody can enter the same thing twice
-    UNIQUE(event_id,entry_type,team_id,individual_id),
+    score INTEGER DEFAULT NULL,
     FOREIGN KEY(event_id) REFERENCES events(id),
-    FOREIGN KEY(team_id) REFERENCES teams(id),
     FOREIGN KEY(individual_id) REFERENCES individuals(id)
 );
 
+CREATE TABLE team_entries(
+    event_id INTEGER NOT NULL,
+    team_id INTEGER,
+    score INTEGER DEFAULT NULL,
+    FOREIGN KEY(event_id) REFERENCES events(id),
+    FOREIGN KEY(team_id) REFERENCES teams(id)
+);
+
 -- this is all i really need, but it's still flexible
-INSERT INTO event_type (name) VALUES ("Athletic");
-INSERT INTO event_type (name) VALUES ("Academic");
-INSERT INTO events (name, event_type) VALUES ("Example Event",1);
-INSERT INTO events (name, team_event, event_type) VALUES ("Example Team Event",TRUE,1);
+INSERT INTO categories (name) VALUES ("Athletic");
+INSERT INTO categories (name) VALUES ("Academic");
+INSERT INTO events (name, category) VALUES ("Example Event",1);
+INSERT INTO events (name, team_event, category) VALUES ("Example Team Event",TRUE,1);
