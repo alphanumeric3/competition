@@ -15,14 +15,12 @@ Add an event
 			<option value="0">Individual</option>
 			<option value="1">Team</option>
 		</select>
-		<!-- TODO: change wording for this to 'category' everywhere -->
 		<label for="category">Event category</label>
 		<select id="category" name="category">
 			{% for category in categories %}
 			<option value="{{ category.id }}">{{ category.name }}</option>
 			{% endfor %}
 		</select>
-		<!-- todo: event entries -->
 		<button>Done</button>
 	</form>
 {% endblock %}

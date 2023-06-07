@@ -199,7 +199,7 @@ def create_app():
         # determine if buttons should be hidden
         printed_report = request.args.get("print")
         
-        # if team, get info from team_entries
+        # if it's a team event, get info from team_entries
         if team_event:
             # select the id, name and place/points for the event
             query = con.execute("""
