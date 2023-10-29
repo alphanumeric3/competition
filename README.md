@@ -1,5 +1,13 @@
-# comeptition
+# competition
 an app written in flask to manage a competition.
+
+## info 
+I wrote this web application for my course. We weren't required to use Python or Git, I just
+didn't think Microsoft Access was right for me.
+
+It uses Flask, Jinja2 templates and an SQLite3 database.
+
+'competition' isn't incredibly secure, you would need HTTP Basic Authentication to protect it.
 
 ## setup
 you will need a linux installation with python and flask.
